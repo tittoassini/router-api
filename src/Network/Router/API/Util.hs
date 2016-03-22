@@ -9,7 +9,7 @@ module Network.Router.API.Util(
 
 import           Control.Concurrent
 import           Control.Exception        (SomeException, fromException, handle,
-                                           try)
+                                            try)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy     as L
