@@ -38,12 +38,14 @@ runWSClient cfg app = do
 
 protocol conn =  send conn . typedBytes
 
-send :: Flat a => WS.Connection -> a -> IO ()
-send conn = WS.sendBinaryData conn . flat
+send :: (Show a,Flat a) => WS.Connection -> a -> IO ()
+send conn v = do
+  WS.sendBinaryData conn $ flat v
+  dbg ["sent",show v]
 
 receive conn = do
    Right v <- unflat <$> WS.receiveData conn
-   dbg ["unflat",show v]
+   dbg ["received",show v]
    return v
 
 sendMsg :: WS.Connection -> L.ByteString -> IO ()
