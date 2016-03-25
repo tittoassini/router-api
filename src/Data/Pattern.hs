@@ -10,7 +10,7 @@ import qualified Data.BitVector              as V
 import           Data.Foldable               (toList)
 import           Data.List                   (intercalate)
 import           Data.Typed                  hiding (Con, Var)
-import           Language.Haskell.Meta.Parse
+-- import           Language.Haskell.Meta.Parse haskell-src-meta,
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Syntax
 
@@ -56,11 +56,11 @@ filterPatternQ patq = do
       -- print $ pmatch p --
      let vars = map (\(V v) -> v) . filter isVar $ toList p
      -- TODO: when done, remove haskell-src-meta
-     let Right c = parseExp $ concat["\\",unwords $ vars,"-> onlyWildCards <$> (",showPatt p,")"]
+     -- let Right c = parseExp $ concat["\\",unwords $ vars,"-> onlyWildCards <$> (",showPatt p,")"]
      -- let c = concat["\\",unwords $ toList p,"->",showPatt p]
-     let c2 = LamE (map (VarP . mkName) vars) (UInfixE (VarE (mkName "onlyWildCards")) (VarE (mkName "<$>")) (ParensE (asExp p)))
+     let c = LamE (map (VarP . mkName) vars) (UInfixE (VarE (mkName "onlyWildCards")) (VarE (mkName "<$>")) (ParensE (asExp p)))
      -- print c >> print c2 >> print (c == c2)
-     return c2
+     return c
 
 isVar (V _) = True
 isVar _ = False
