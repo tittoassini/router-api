@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings ,NoMonomorphismRestriction #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+
 module Network.Router.API.Util(
-  liftIO,forever,when,unless,try,SomeException,threadDelay
+  liftIO,forever,when,unless,try,SomeException,threadDelay,seconds
   ,dbg,warn,err,dbgS,logLevel
-  ,runClient,send,receive,sendMsg,receiveMsg
+  ,runClient,runClientForever,send,receive,sendMsg,receiveMsg
   ,protocol
   ,module X
   ) where
@@ -22,8 +24,21 @@ import           System.Log.Logger        as X
 
 logLevel = updateGlobalLogger rootLoggerName . setLevel
 
--- runClient :: Typed a => Proxy a -> (Connection -> IO r) -> IO r
--- runClient router proxy client = runWSClient (\conn -> protocol conn (ClassHub (absType proxy)) >> client conn)
+-- Protect against crashes, restart on failure
+runClientForever :: (Model router, Flat router) => Config -> router -> (WS.Connection -> IO a) -> IO ()
+runClientForever cfg router op = forever $ do
+     Left (ex :: SomeException) <- try $ runClient cfg router $ \conn -> do
+
+       liftIO $ dbgS "connected"
+       op conn
+
+     -- Something went wrong, wait a few seconds and restart
+     dbg ["Exited loop with error",concat ["'",show ex,"'"],"retrying in a bit."]
+     threadDelay $ seconds 5
+
+seconds = (* 1000000)
+
+runClient :: (Model router,Flat router) => Config -> router -> (WS.Connection -> IO a) -> IO a
 runClient cfg router client = runWSClient cfg (\conn -> protocol conn router >> client conn)
 
 -- Automatically close sockets on App exit
