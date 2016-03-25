@@ -14,8 +14,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Network.Router.API,Network.Router.API.Pipes,Network.Router.API.Types,Network.Router.API.Util
-  build-depends:       async >= 2.1.0, base >= 4.7 && < 5, bytestring, data-default-class, flat, hslogger, pipes, transformers, typed, websockets
+  exposed-modules:     Data.BitVector,Data.Pattern,Network.Router.API,Network.Router.API.Pipes,Network.Router.API.Types,Network.Router.API.Util
+  build-depends:       async >= 2.1.0, base >= 4.7 && < 5, bytestring, data-default-class, flat, haskell-src-meta,template-haskell, hslogger, pipes, transformers, typed, vector >= 0.11.0.0, websockets
   default-language:    Haskell2010
 
 test-suite router-api-test
