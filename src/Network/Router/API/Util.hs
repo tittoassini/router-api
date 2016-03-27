@@ -20,12 +20,11 @@ import           Data.Typed
 import           Network.Router.API.Types
 import qualified Network.WebSockets       as WS
 import           System.Log.Logger        as X
---import           Control.Concurrent.Async as X
 
 logLevel = updateGlobalLogger rootLoggerName . setLevel
 
 -- Protect against crashes, restart on failure
-runClientForever :: (Model router, Flat router) => Config -> router -> (WS.Connection -> IO a) -> IO ()
+runClientForever :: (Model (router a), Flat (router a),Show (router a)) => Config -> router a -> (Connection a -> IO b) -> IO ()
 runClientForever cfg router op = forever $ do
      Left (ex :: SomeException) <- try $ runClient cfg router $ \conn -> do
 
@@ -38,8 +37,14 @@ runClientForever cfg router op = forever $ do
 
 seconds = (* 1000000)
 
-runClient :: (Model router,Flat router) => Config -> router -> (WS.Connection -> IO a) -> IO a
-runClient cfg router client = runWSClient cfg (\conn -> protocol conn router >> client conn)
+runClient :: (Model (router a), Flat (router a),Show (router a)) => Config -> router a -> (Connection a -> IO r) -> IO r
+runClient cfg router client = runWSClient cfg (\c -> let conn = Connection c
+                                                     in do
+                                                  --print router
+                                                  -- print $ typedBytes router
+                                                  -- print $ flat $ typedBytes router
+                                                  protocol conn router
+                                                  client conn)
 
 -- Automatically close sockets on App exit
 runWSClient :: Config -> WS.ClientApp a -> IO a
@@ -51,14 +56,16 @@ runWSClient cfg app = do
    where
      opts = WS.defaultConnectionOptions -- { WS.connectionOnPong = dbgS "gotPong"}
 
-protocol conn =  send conn . typedBytes
+protocol :: (Model (router a), Flat (router a)) => Connection a -> router a -> IO ()
+protocol (Connection conn) =  WS.sendBinaryData conn . flat . typedBytes
 
-send :: (Show a,Flat a) => WS.Connection -> a -> IO ()
-send conn v = do
+send :: (Show a,Flat a) => Connection a -> a -> IO ()
+send (Connection conn) v = do
   WS.sendBinaryData conn $ flat v
   dbg ["sent",show v]
 
-receive conn = do
+receive :: (Show a, Flat a) => Connection t -> IO a
+receive (Connection conn) = do
    Right v <- unflat <$> WS.receiveData conn
    dbg ["received",show v]
    return v
@@ -69,7 +76,7 @@ sendMsg = WS.sendBinaryData
 receiveMsg :: WS.Connection -> IO L.ByteString
 receiveMsg conn = WS.receiveData conn
 
-dbgS = debugM "Hub"
+dbgS = debugM "Router"
 dbg = liftIO . dbgS . unwords
-err = liftIO . errorM "Hub" . unwords
-warn = liftIO . warningM "Hub" . unwords
+err = liftIO . errorM "Router" . unwords
+warn = liftIO . warningM "Router" . unwords

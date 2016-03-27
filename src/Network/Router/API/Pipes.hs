@@ -4,9 +4,11 @@ module Network.Router.API.Pipes(
   ,pipeIn,pipeOut
   ) where
 
+import Network.Router.API.Types
 import Network.Router.API.Util
 import Pipes
 
+pipeIn :: (Show a, MonadIO m,Flat a) => Connection a -> Producer a m ()
 pipeIn conn = loop
      where
        loop = do
@@ -14,6 +16,7 @@ pipeIn conn = loop
          yield v
          loop
 
+pipeOut :: (Show a, MonadIO m,Flat a) => Connection a -> Consumer a m ()
 pipeOut conn = loop
      where
        loop = do
